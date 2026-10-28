@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Runner's Mood</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Runner's Mood matches you with people you've actually run with. Pick your mood after the cooldown: a running buddy, a crew, or a date.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a race-day page. Bib-number display type, splits as section markers,
+   two mood colours (Pace blue, Spark pink) that carry meaning everywhere. */
+:root {
+  --bg: #eef1f6;          /* pre-dawn sky */
+  --surface: #ffffff;
+  --ink: #141b34;          /* navy ink */
+  --muted: #59617a;
+  --line: #d3d9e6;
+  --pace: #2f5bff;         /* platonic: Pace + Crew */
+  --spark: #ff3d6a;        /* romantic: Spark */
+  --hivis: #e8ff5a;        /* bib / hi-vis highlight, used sparingly */
+  --on-accent: #ffffff;
+  --bib-ink: #141b34;
+  --shadow: 0 18px 40px -18px rgba(20, 27, 52, .35);
+
+  --display: "Big Shoulders Display", "Oswald", "Arial Narrow", Impact, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1224; --surface: #161d36; --ink: #eef1f8; --muted: #a2aac2; --line: #2a3354;
+    --pace: #6f8dff; --spark: #ff6a8c; --hivis: #e8ff5a; --on-accent: #0d1224; --bib-ink: #141b34;
+    --shadow: 0 18px 40px -18px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1224; --surface: #161d36; --ink: #eef1f8; --muted: #a2aac2; --line: #2a3354;
+  --pace: #6f8dff; --spark: #ff6a8c; --hivis: #e8ff5a; --on-accent: #0d1224; --bib-ink: #141b34;
+  --shadow: 0 18px 40px -18px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 1.0625rem; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1140px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 900; line-height: .95; letter-spacing: .005em; text-transform: uppercase; margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(2.4rem, 6vw, 4.2rem); }
+h3 { font-size: 1.7rem; font-weight: 800; }
+p { margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--pace); outline-offset: 3px; border-radius: 4px; }
+.eyebrow { font-family: var(--mono); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 34em; }
+.pace-t { color: var(--pace); } .spark-t { color: var(--spark); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: .5em; border: 0; cursor: pointer; text-decoration: none;
+  font: 700 1rem/1 var(--body); padding: 1em 1.4em; border-radius: 999px; transition: transform .15s ease, box-shadow .15s ease; }
+.btn:hover { transform: translateY(-2px); }
+.btn-primary { background: var(--ink); color: var(--bg); }
+.btn-ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+
+/* Nav */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.logo { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 900; font-size: 1.6rem; text-transform: uppercase; text-decoration: none; letter-spacing: .01em; }
+.logo-mark { width: 30px; height: 30px; border-radius: 50%; background: conic-gradient(var(--pace) 0 50%, var(--spark) 50% 100%); position: relative; flex: none; }
+.logo-mark::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg); }
+.nav-links { display: flex; gap: 26px; align-items: center; font-weight: 600; font-size: .95rem; }
+.nav-links a:not(.btn) { text-decoration: none; color: var(--muted); }
+.nav-links a:not(.btn):hover { color: var(--ink); }
+.nav .btn { padding: .75em 1.1em; font-size: .9rem; }
+@media (max-width: 860px) { .nav-links a:not(.btn) { display: none; } }
+
+/* Hero */
+.hero { padding-block: clamp(48px, 8vw, 96px) clamp(56px, 8vw, 104px); }
+.hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.hero-grid > * { min-width: 0; }
+.hero h1 { font-size: clamp(3.6rem, 11vw, 8.6rem); line-height: .86; }
+.hero h1 .row2 { display: block; color: var(--pace); }
+.hero h1 .row2 em { font-style: normal; color: var(--spark); }
+.hero .lede { margin-top: 26px; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.hero-note { margin-top: 22px; font-family: var(--mono); font-size: .82rem; color: var(--muted); }
+@media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; } }
+
+/* Phone mockup */
+.phone { width: min(340px, 100%); margin-inline: auto; background: var(--ink); border-radius: 44px; padding: 12px; box-shadow: var(--shadow); transform: rotate(2deg); }
+.screen { background: var(--surface); color: var(--ink); border-radius: 34px; padding: 22px 18px 20px; overflow: hidden; }
+.screen-top { display: flex; justify-content: space-between; font-family: var(--mono); font-size: .72rem; color: var(--muted); }
+.cooldown { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; background: var(--hivis); color: var(--bib-ink); font: 700 .72rem/1 var(--mono); padding: 6px 9px; border-radius: 6px; letter-spacing: .06em; text-transform: uppercase; }
+.run-title { font-family: var(--display); font-weight: 800; font-size: 1.75rem; text-transform: uppercase; line-height: 1; margin-top: 10px; }
+.run-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 14px; padding-block: 10px; border-block: 1px solid var(--line); }
+.run-stats div { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1rem; }
+.run-stats span { display: block; font-family: var(--body); font-weight: 500; font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.who { margin-top: 14px; font-weight: 700; font-size: .92rem; }
+.runner { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.runner:last-child { border-bottom: 0; }
+.av { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 700 .8rem var(--body); color: #fff; flex: none; }
+.runner .meta { flex: 1; min-width: 0; font-size: .85rem; line-height: 1.25; }
+.runner .meta small { display: block; color: var(--muted); font-family: var(--mono); font-size: .7rem; }
+.sig { display: flex; gap: 5px; }
+.sig button { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; font-size: .9rem; display: grid; place-items: center; color: var(--muted); transition: all .15s; }
+.sig button svg { width: 16px; height: 16px; }
+.sig button[data-m="pace"].on { background: var(--pace); border-color: var(--pace); color: #fff; }
+.sig button[data-m="spark"].on { background: var(--spark); border-color: var(--spark); color: #fff; }
+.screen-foot { margin-top: 12px; font-size: .74rem; color: var(--muted); text-align: center; }
+
+/* Ticker band */
+.band { background: var(--ink); color: var(--bg); overflow: hidden; }
+.band .wrap { padding-block: 22px; display: flex; flex-wrap: wrap; gap: 10px 36px; justify-content: space-between; align-items: center; }
+.band p { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: clamp(1.3rem, 3vw, 1.9rem); letter-spacing: .01em; }
+.band p b { color: var(--hivis); font-weight: 800; }
+
+/* Sections */
+section.block { padding-block: clamp(64px, 9vw, 120px); }
+.sec-head { display: grid; gap: 18px; max-width: 760px; margin-bottom: 48px; }
+
+/* How it works: splits */
+.splits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 3px solid var(--ink); }
+.split { padding: 22px 22px 8px 0; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); padding-left: 22px; min-width: 0; }
+.split:first-child { padding-left: 0; }
+.split:last-child { border-right: 0; }
+.split .km { font-family: var(--mono); font-weight: 700; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; }
+.split h3 { font-size: 2rem; }
+.split p { color: var(--muted); font-size: 1rem; }
+@media (max-width: 900px) { .splits { grid-template-columns: 1fr 1fr; } .split:nth-child(2) { border-right: 0; } .split:nth-child(3) { padding-left: 0; } .split:nth-child(n+3) { border-top: 1px solid var(--line); } }
+@media (max-width: 520px) { .splits { grid-template-columns: 1fr; } .split { border-right: 0; padding-left: 0; } .split + .split { border-top: 1px solid var(--line); } }
+
+/* Moods */
+.moods { background: var(--surface); }
+.mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 4vw, 56px); align-items: start; }
+.mood-grid > * { min-width: 0; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.tab { font: 800 1.35rem/1 var(--display); text-transform: uppercase; letter-spacing: .02em; padding: .55em 1em; border-radius: 999px; border: 2px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"][data-mood="pace"], .tab[aria-selected="true"][data-mood="crew"] { background: var(--pace); border-color: var(--pace); color: #fff; }
+.tab[aria-selected="true"][data-mood="spark"] { background: var(--spark); border-color: var(--spark); color: #fff; }
+.mood-panel h3 { font-size: clamp(2.2rem, 4vw, 3rem); }
+.mood-panel .lede { margin-top: 14px; }
+.mood-panel ul { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 12px; }
+.mood-panel li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: baseline; }
+.mood-panel li::before { content: "→"; font-family: var(--mono); font-weight: 700; color: var(--mood, var(--pace)); }
+.rule-card { border: 2px solid var(--ink); border-radius: 22px; padding: clamp(22px, 3vw, 34px); display: grid; gap: 18px; }
+.rule-card h3 { font-size: 2rem; }
+.matrix { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.matrix th, .matrix td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+.matrix th { font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.chip { display: inline-block; padding: .25em .7em; border-radius: 999px; font-weight: 700; font-size: .82rem; color: #fff; white-space: nowrap; }
+.chip.pace { background: var(--pace); } .chip.spark { background: var(--spark); } .chip.crew { background: color-mix(in srgb, var(--pace) 70%, var(--ink)); }
+.chip.none { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line); }
+.table-scroll { overflow-x: auto; }
+@media (max-width: 860px) { .mood-grid { grid-template-columns: 1fr; } }
+
+/* Safety */
+.safety-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 40px; }
+.safety-item { display: grid; gap: 8px; align-content: start; padding-top: 18px; border-top: 2px solid var(--ink); }
+.safety-item h3 { font-size: 1.5rem; }
+.safety-item p { color: var(--muted); font-size: 1rem; }
+@media (max-width: 860px) { .safety-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .safety-grid { grid-template-columns: 1fr; } }
+
+/* Clubs */
+.clubs { background: var(--pace); color: #fff; }
+.clubs .eyebrow, .clubs .lede { color: rgba(255,255,255,.82); }
+.club-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.club-grid > * { min-width: 0; }
+.club-list { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 14px; font-size: 1.05rem; }
+.club-list li { display: flex; gap: 12px; }
+.club-list li::before { content: ""; width: 10px; height: 10px; margin-top: .55em; border-radius: 2px; background: var(--hivis); flex: none; }
+.bib { background: #fff; color: var(--bib-ink); border-radius: 18px; padding: 26px 26px 22px; box-shadow: 0 24px 50px -20px rgba(0,0,0,.45); position: relative; transform: rotate(-2.5deg); max-width: 420px; margin-inline: auto; width: 100%; }
+.bib::before, .bib::after { content: ""; position: absolute; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--pace); }
+.bib::before { left: 14px; } .bib::after { right: 14px; }
+.bib-head { display: flex; justify-content: space-between; font: 700 .75rem var(--mono); letter-spacing: .1em; text-transform: uppercase; padding-inline: 18px; }
+.bib-num { font-family: var(--display); font-weight: 900; font-size: clamp(5rem, 14vw, 7.5rem); line-height: .9; text-align: center; margin: 14px 0 8px; letter-spacing: .02em; }
+.bib-strip { background: var(--hivis); color: var(--bib-ink); text-align: center; font: 800 1.2rem/1 var(--display); text-transform: uppercase; padding: 10px; border-radius: 8px; letter-spacing: .04em; }
+.bib-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin-top: 16px; font: 700 1.05rem var(--mono); font-variant-numeric: tabular-nums; }
+.bib-stats span { display: block; font: 600 .65rem var(--body); letter-spacing: .1em; text-transform: uppercase; color: #59617a; }
+.pricing { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 30px; }
+.price { background: rgba(255,255,255,.12); border-radius: 16px; padding: 18px; display: grid; gap: 4px; }
+.price b { font-family: var(--display); font-size: 2rem; font-weight: 900; line-height: 1; }
+.price small { color: rgba(255,255,255,.82); font-size: .9rem; }
+@media (max-width: 860px) { .club-grid { grid-template-columns: 1fr; } }
+
+/* Why now */
+.why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.why { background: var(--surface); border-radius: 20px; padding: 28px; display: grid; gap: 12px; align-content: start; border: 1px solid var(--line); }
+.why .big { font-family: var(--display); font-weight: 900; font-size: 2.6rem; line-height: .95; text-transform: uppercase; }
+.why p { color: var(--muted); font-size: 1rem; }
+@media (max-width: 860px) { .why-grid { grid-template-columns: 1fr; } }
+
+/* Stories */
+.quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+.quote { display: grid; gap: 14px; align-content: start; }
+.quote blockquote { margin: 0; font-size: 1.15rem; line-height: 1.5; font-weight: 500; }
+.quote cite { font-style: normal; font-family: var(--mono); font-size: .78rem; color: var(--muted); }
+.quote .chip { justify-self: start; }
+.quotes-note { margin-top: 26px; font-size: .85rem; color: var(--muted); }
+@media (max-width: 860px) { .quotes { grid-template-columns: 1fr; } }
+
+/* Waitlist */
+.waitlist { background: var(--ink); color: var(--bg); }
+.waitlist .eyebrow, .waitlist .lede { color: color-mix(in srgb, var(--bg) 72%, var(--ink)); }
+.wl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: start; }
+.wl-grid > * { min-width: 0; }
+.waitlist h2 .hv { color: var(--hivis); }
+form.wl { display: grid; gap: 16px; background: var(--surface); color: var(--ink); border-radius: 22px; padding: clamp(20px, 3vw, 32px); }
+.field { display: grid; gap: 6px; }
+.field label, .field legend { font-weight: 700; font-size: .9rem; }
+.field input, .field select { font: 500 1rem var(--body); padding: .85em 1em; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+fieldset.field { border: 0; padding: 0; margin: 0; }
+.mood-pick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.mood-pick label { position: relative; cursor: pointer; }
+.mood-pick input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.mood-pick span { display: inline-block; padding: .55em 1em; border-radius: 999px; border: 1.5px solid var(--line); font-weight: 700; font-size: .92rem; }
+.mood-pick input:checked + span { background: var(--pace); border-color: var(--pace); color: #fff; }
+.mood-pick input[value="spark"]:checked + span { background: var(--spark); border-color: var(--spark); }
+.mood-pick input:focus-visible + span { outline: 3px solid var(--pace); outline-offset: 2px; }
+form.wl .btn-primary { justify-content: center; background: var(--ink); color: var(--surface); }
+.form-msg { font-size: .92rem; color: var(--muted); }
+.form-msg.ok { color: var(--ink); font-weight: 600; }
+@media (max-width: 860px) { .wl-grid { grid-template-columns: 1fr; } }
+
+footer { padding-block: 40px; border-top: 1px solid var(--line); }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap nav">
+    <a class="logo" href="#top"><span class="logo-mark" aria-hidden="true"></span>Runner's Mood</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#moods">Moods</a>
+      <a href="#safety">Safety</a>
+      <a href="#clubs">For clubs</a>
+      <a class="btn btn-primary" href="#join">Join the waitlist</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Social running · Friends · Dating</p>
+        <h1 style="margin-top:18px">Meet them <span class="row2">at mile <em>one.</em></span></h1>
+        <p class="lede">Runner's Mood matches you with people you've actually run with. After the run, pick your mood: a running buddy, a crew, or a date. You only connect if it's mutual.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#join">Join the waitlist</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="hero-note">No swiping. No strangers. Every match starts on a run.</p>
+      </div>
+
+      <div class="phone" aria-label="App preview: post-run card">
+        <div class="screen">
+          <div class="screen-top"><span>7:48 PM</span><span>Run card</span></div>
+          <span class="cooldown">● Cooldown · 23h 12m left</span>
+          <div class="run-title">Thursday Bridge Loop</div>
+          <div class="run-stats">
+            <div>6.4<span>km</span></div>
+            <div>5:42<span>avg /km</span></div>
+            <div>31<span>runners</span></div>
+          </div>
+          <p class="who">Who'd you vibe with?</p>
+          <div class="runner">
+            <div class="av" style="background:#2f5bff">MA</div>
+            <div class="meta">Maya<small>5:40 pace group</small></div>
+            <div class="sig">
+              <button type="button" data-m="pace" aria-label="Send Maya a Pace wave" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h16M13 5l7 7-7 7"/></svg></button>
+              <button type="button" data-m="spark" aria-label="Send Maya a Spark" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></button>
+            </div>
+          </div>
+          <div class="runner">
+            <div class="av" style="background:#ff3d6a">JO</div>
+            <div class="meta">Jonah<small>5:40 pace group</small></div>
+            <div class="sig">
+              <button type="button" data-m="pace" aria-label="Send Jonah a Pace wave" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h16M13 5l7 7-7 7"/></svg></button>
+              <button type="button" data-m="spark" class="on" aria-label="Send Jonah a Spark" aria-pressed="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></button>
+            </div>
+          </div>
+          <div class="runner">
+            <div class="av" style="background:#141b34">PR</div>
+            <div class="meta">Priya<small>6:10 pace group</small></div>
+            <div class="sig">
+              <button type="button" data-m="pace" class="on" aria-label="Send Priya a Pace wave" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 12h16M13 5l7 7-7 7"/></svg></button>
+              <button type="button" data-m="spark" aria-label="Send Priya a Spark" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg></button>
+            </div>
+          </div>
+          <p class="screen-foot">Signals stay private unless they're returned.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="band">
+    <div class="wrap">
+      <p>End the <b>anti-social</b> era.</p>
+      <p>One run at a time.</p>
+    </div>
+  </div>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Four splits from<br>stranger to friend.</h2>
+        <p class="lede">Run clubs already bring people together every week. Runner's Mood handles the awkward part after the run.</p>
+      </div>
+      <div class="splits">
+        <div class="split">
+          <div class="km"><span>Split 1</span><span>0.0 km</span></div>
+          <h3>Check in</h3>
+          <p>Scan your club's QR code at the start line. It proves you were there and puts you on the run card.</p>
+        </div>
+        <div class="split">
+          <div class="km"><span>Split 2</span><span>6.4 km</span></div>
+          <h3>Run</h3>
+          <p>Run like you always do. Chat in your pace group. The app stays in your pocket.</p>
+        </div>
+        <div class="split">
+          <div class="km"><span>Split 3</span><span>+24 h</span></div>
+          <h3>Cooldown</h3>
+          <p>For 24 hours, privately send a Wave, a High-five or a Spark to anyone who ran with you.</p>
+        </div>
+        <div class="split">
+          <div class="km"><span>Split 4</span><span>Next run</span></div>
+          <h3>Match</h3>
+          <p>If they sent one back, you match. Pick a club run to do together next week.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block moods" id="moods">
+    <div class="wrap mood-grid">
+      <div>
+        <p class="eyebrow" style="margin-bottom:16px">Pick your mood</p>
+        <div class="tabs" role="tablist" aria-label="Moods">
+          <button type="button" class="tab" role="tab" id="tab-pace" data-mood="pace" aria-selected="true" aria-controls="mood-panel">Pace</button>
+          <button type="button" class="tab" role="tab" id="tab-crew" data-mood="crew" aria-selected="false" aria-controls="mood-panel">Crew</button>
+          <button type="button" class="tab" role="tab" id="tab-spark" data-mood="spark" aria-selected="false" aria-controls="mood-panel">Spark</button>
+        </div>
+        <div class="mood-panel" id="mood-panel" role="tabpanel" aria-live="polite">
+          <h3 id="mood-title" class="pace-t">A running buddy</h3>
+          <p class="lede" id="mood-desc">Find someone who holds your pace and shows up at 6 a.m. Pace matches compare your usual min/km, distances and run times.</p>
+          <ul id="mood-list">
+            <li>Signal: a Wave</li>
+            <li>Best for: long-run partners, race training, accountability</li>
+            <li>Suggested next step: the same club run next week</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <p class="eyebrow">The gentle-mood rule</p>
+        <h3>The match settles on the gentler mood.</h3>
+        <p style="color:var(--muted)">If you send a Spark and they send a Wave, you become running buddies. They never learn you sent a Spark. Nobody gets rejected in front of the club.</p>
+        <div class="table-scroll">
+          <table class="matrix">
+            <thead><tr><th>You send</th><th>They send</th><th>You get</th></tr></thead>
+            <tbody>
+              <tr><td>Spark</td><td>Spark</td><td><span class="chip spark">Spark match</span></td></tr>
+              <tr><td>Spark</td><td>Wave</td><td><span class="chip pace">Pace match</span></td></tr>
+              <tr><td>High-five</td><td>Spark</td><td><span class="chip crew">Crew match</span></td></tr>
+              <tr><td>Wave</td><td>Wave</td><td><span class="chip pace">Pace match</span></td></tr>
+              <tr><td>Spark</td><td>Nothing</td><td><span class="chip none">No one knows</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="safety">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Trust &amp; safety</p>
+        <h2>Built for people<br>you've met in daylight.</h2>
+      </div>
+      <div class="safety-grid">
+        <div class="safety-item"><h3>Shared runs only</h3><p>You can only signal people who checked in to the same run. No feed of strangers, no cold messages.</p></div>
+        <div class="safety-item"><h3>Private signals</h3><p>Nobody sees a signal unless it's returned. Your mood is never shown to the group.</p></div>
+        <div class="safety-item"><h3>Verified for Spark</h3><p>Photo and ID verification is required before you can send or receive a Spark.</p></div>
+        <div class="safety-item"><h3>Group-first plans</h3><p>Your next meetup defaults to a club run in a public place, with people around.</p></div>
+        <div class="safety-item"><h3>Captain controls</h3><p>Club captains can remove members, and clubs can switch Spark off for their runs.</p></div>
+        <div class="safety-item"><h3>Route privacy</h3><p>The first and last 400 m of every route are hidden, so your home stays private.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block clubs" id="clubs">
+    <div class="wrap club-grid">
+      <div>
+        <p class="eyebrow">For run clubs</p>
+        <h2 style="margin-top:18px">Run the club.<br>Skip the admin.</h2>
+        <p class="lede" style="margin-top:20px">Free tools for captains, so you can stop juggling group chats, spreadsheets and DMs.</p>
+        <ul class="club-list">
+          <li>QR check-in and attendance history for every run</li>
+          <li>Pace group sign-ups, waivers and capacity limits</li>
+          <li>See how many first-timers come back for a second run</li>
+          <li>Get matched with local brands, and keep a share of sponsorship and ticket revenue</li>
+        </ul>
+        <div class="pricing">
+          <div class="price"><b>Free</b><small>Check-ins, event pages, member list</small></div>
+          <div class="price"><b>$49/mo</b><small>Club Pro: ticketing, analytics, sponsors</small></div>
+        </div>
+      </div>
+      <div class="bib" aria-label="Sample club race bib">
+        <div class="bib-head"><span>Founding club</span><span>Season 01</span></div>
+        <div class="bib-num">0142</div>
+        <div class="bib-strip">Runner's Mood Club</div>
+        <div class="bib-stats">
+          <div>212<span>members</span></div>
+          <div>3×<span>runs / week</span></div>
+          <div>64%<span>come back</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="why">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Why now</p>
+        <h2>The run club is the<br>new town square.</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why"><div class="big pace-t">Loneliness is a health issue</div><p>In 2023 the U.S. Surgeon General called loneliness and isolation an epidemic. People want somewhere to see the same faces every week.</p></div>
+        <div class="why"><div class="big spark-t">Swipe fatigue is real</div><p>Dating apps are losing paying users. People say they want to meet someone in real life, with real context.</p></div>
+        <div class="why"><div class="big">Run clubs are booming</div><p>Social run clubs fill up every week in cities worldwide. The missing piece is a low-pressure way to follow up.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block moods">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Cooldown stories</p>
+        <h2>What a match<br>could look like.</h2>
+      </div>
+      <div class="quotes">
+        <div class="quote"><span class="chip pace">Pace match</span><blockquote>"We kept ending up next to each other at 5:30 pace. Now we do our Sunday long run together every week."</blockquote><cite>Long-run partners · Marathon block</cite></div>
+        <div class="quote"><span class="chip crew">Crew match</span><blockquote>"I moved here in March and knew nobody. Four High-fives later we have a group chat and a standing coffee after Thursday runs."</blockquote><cite>New in town · 6:15 pace group</cite></div>
+        <div class="quote"><span class="chip spark">Spark match</span><blockquote>"I'd never have asked for his number in front of forty people. We both sent a Spark that night."</blockquote><cite>Bridge Loop regulars</cite></div>
+      </div>
+      <p class="quotes-note">Illustrative scenarios for this concept. Runner's Mood hasn't launched yet.</p>
+    </div>
+  </section>
+
+  <section class="block waitlist" id="join">
+    <div class="wrap wl-grid">
+      <div>
+        <p class="eyebrow">Early access</p>
+        <h2 style="margin-top:18px">Get on the<br><span class="hv">start line.</span></h2>
+        <p class="lede" style="margin-top:20px">We're launching city by city with founding run clubs. Tell us where you run and we'll let you know when your city opens.</p>
+      </div>
+      <form class="wl" id="wl-form" novalidate>
+        <div class="field">
+          <label for="wl-email">Email</label>
+          <input id="wl-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="wl-city">City</label>
+          <select id="wl-city" name="city">
+            <option>New York</option><option>London</option><option>Los Angeles</option><option>Chicago</option><option>Toronto</option><option>Sydney</option><option>Somewhere else</option>
+          </select>
+        </div>
+        <fieldset class="field">
+          <legend>I'm mostly looking for</legend>
+          <div class="mood-pick">
+            <label><input type="radio" name="mood" id="wl-mood-pace" value="pace" checked><span>A running buddy</span></label>
+            <label><input type="radio" name="mood" id="wl-mood-crew" value="crew"><span>A crew</span></label>
+            <label><input type="radio" name="mood" id="wl-mood-spark" value="spark"><span>A date</span></label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="wl-club">Your run club (optional)</label>
+          <input id="wl-club" name="club" type="text" placeholder="e.g. Thursday Bridge Runners">
+        </div>
+        <button class="btn btn-primary" type="submit">Join the waitlist</button>
+        <p class="form-msg" id="wl-msg" role="status">Concept page: this form isn't connected yet, so nothing is sent.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="logo" href="#top" style="font-size:1.3rem"><span class="logo-mark" aria-hidden="true"></span>Runner's Mood</a>
+    <span>Meet them at mile one. · Concept site</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Phone mockup: toggle signals (one signal per runner)
+  document.querySelectorAll('.sig').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var wasOn = b.classList.contains('on');
+      group.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
+      if (!wasOn) { b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); }
+    });
+  });
+
+  // Mood tabs
+  var moods = {
+    pace: { title: 'A running buddy', cls: 'pace-t', color: 'var(--pace)',
+      desc: 'Find someone who holds your pace and shows up at 6 a.m. Pace matches compare your usual min/km, distances and run times.',
+      list: ['Signal: a Wave', 'Best for: long-run partners, race training, accountability', 'Suggested next step: the same club run next week'] },
+    crew: { title: 'A crew', cls: 'pace-t', color: 'var(--pace)',
+      desc: 'Turn the regulars into friends. Crew matches add you to a small group from your run for coffee, brunch and race-day plans.',
+      list: ['Signal: a High-five', 'Best for: new in town, making friends after college', 'Suggested next step: post-run coffee with the group'] },
+    spark: { title: 'A date', cls: 'spark-t', color: 'var(--spark)',
+      desc: 'You already know you get along for 6 km. A Spark says you would like to see them outside the run. It only shows if they send one too.',
+      list: ['Signal: a Spark (verified profiles only)', 'Best for: meeting someone with the same routine and values', 'Suggested next step: a run together, then coffee'] }
+  };
+  var tabs = document.querySelectorAll('.tab');
+  var title = document.getElementById('mood-title'), desc = document.getElementById('mood-desc'), list = document.getElementById('mood-list');
+  function show(key) {
+    var m = moods[key];
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.mood === key)); });
+    title.textContent = m.title; title.className = m.cls;
+    desc.textContent = m.desc;
+    list.style.setProperty('--mood', m.color);
+    list.innerHTML = '';
+    m.list.forEach(function (s) { var li = document.createElement('li'); li.textContent = s; list.appendChild(li); });
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.mood); }); });
+
+  // Waitlist (concept only)
+  var form = document.getElementById('wl-form'), msg = document.getElementById('wl-msg');
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = document.getElementById('wl-email');
+    if (!email.value || !email.checkValidity()) {
+      msg.className = 'form-msg'; msg.textContent = 'Enter an email address like you@example.com.'; email.focus(); return;
+    }
+    var city = document.getElementById('wl-city').value;
+    msg.className = 'form-msg ok';
+    msg.textContent = 'You’re on the list for ' + (city === 'Somewhere else' ? 'your city' : city) + '. (Concept demo: nothing was sent.)';
+  });
+})();
+</script>
+</body>
+</html>
